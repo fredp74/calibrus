@@ -104,4 +104,4 @@ MIT — see LICENSE.
 
 ---
 
-Built by [Algotradingresearch](https://algotradingresearch.com).
+Built by [Algotradingresearch](https://algotradingresearch.com)
