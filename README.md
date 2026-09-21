@@ -102,4 +102,4 @@ MIT — see LICENSE.
 
 ---
 
-*A research project by [Algotradingresearch](https://algotradingresearch.com)*
+*A research project by [Algotradingresearch.com](https://algotradingresearch.com)*
