@@ -4,6 +4,8 @@ An open-source "System One" decision model for algorithmic trading:
 route (long/short/hold), a continuous score, and **calibrated confidence**,
 built from market features (OHLCV) and optional text (news, sentiment).
 
+*A research project by [AlgoTradingResearch](https://algotradingresearch.com).*
+
 ## Why
 
 A standard classifier will say "long" with 99% confidence even when it's
@@ -101,3 +103,7 @@ python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt 
 ## License
 
 MIT — see LICENSE.
+
+---
+
+Built by [AlgoTradingResearch](https://algotradingresearch.com).
