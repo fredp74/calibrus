@@ -77,7 +77,7 @@ python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt 
   "route": "long",
   "score": 0.73,
   "confidence": 0.88,
-  "probs": {"short": 0.05, "hold": 0.07, "long": 0.88}
+  "probs": {"short": 0.03, "hold": 0.06, "long": 0.91}
 }
 ```
 
