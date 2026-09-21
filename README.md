@@ -93,8 +93,7 @@ python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt 
   `ece_before`/`ece_after` values logged by `calibrate.py` before trusting
   the model.
 - This is not financial advice or a ready-to-use trading system — it's a
-  research pipeline that needs rigorous validation (full backtesting,
-  transaction costs, slippage) before any real-world use.
+  research pipeline that needs rigorous validation before any real-world use.
 
 ## License
 
