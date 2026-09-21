@@ -10,7 +10,7 @@ built from market features (OHLCV) and optional text (news, sentiment).
 
 A standard classifier will say "long" with 99% confidence even when it's
 wrong half the time. Calibrus explicitly calibrates that confidence
-(temperature scaling + ECE measurement) so that "90% confidence" actually
+(temperature scaling + Expected Calibration Error (ECE) measurement) so that "90% confidence" actually
 means "right 9 times out of 10" — useful for deciding when to act
 automatically and when to escalate to human review.
 
