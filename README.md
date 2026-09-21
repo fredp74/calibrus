@@ -55,9 +55,7 @@ variable instead.
 ### Automatic technical indicators
 If you only have raw OHLCV, enable `features.compute_ta.enabled: true` in
 `config.yaml` — indicators (`rsi`, `macd`, `bbands`, `ema`, `atr`, `obv`)
-are computed automatically. If you already have your own features, name
-
-them `feat_*` in your data and disable `compute_ta`.
+are computed automatically. If you already have your own features, name them `feat_*` in your data and disable `compute_ta`.
 
 ## Pipeline overview
 calibrus.data.dataset -> builds the dataset (loads data, computes features, temporal split)
