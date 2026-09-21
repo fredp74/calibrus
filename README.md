@@ -15,7 +15,7 @@ automatically and when to escalate to human review.
 ## Installation
 
 ```bash
-git clone <repo-url> calibrus
+git clone https://github.com/fredp74/calibrus/
 cd calibrus
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
