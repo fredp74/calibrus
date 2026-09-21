@@ -1,0 +1,40 @@
+# Calibrus — configuration exemple
+# Copie ce fichier en config.yaml et adapte-le. NE COMMIT JAMAIS config.yaml
+# s'il contient des identifiants en clair — utilise CALIBRUS_DB_PASSWORD à la place.
+
+data_source:
+  type: csv                      # csv | parquet | mariadb
+
+  csv:
+    path: "examples/sample_data.csv"
+
+  parquet:
+    path: "data/signals.parquet"
+
+  mariadb:
+    host: "localhost"
+    port: 3306
+    database: "trading"
+    table: "signals"
+    user: "calibrus_user"
+    password: ""                 # laisse vide, utilise CALIBRUS_DB_PASSWORD en variable d'env
+    query: null                  # optionnel: requête SQL custom au lieu de SELECT * FROM table
+
+features:
+  compute_ta:
+    enabled: true
+    indicators: ["rsi", "macd", "bbands", "ema", "atr"]
+  text_model: "distilbert-base-uncased"
+  max_text_len: 128
+
+split:
+  train_frac: 0.7
+  val_frac: 0.15                 # le reste (0.15 ici) va au test
+
+train:
+  batch_size: 16
+  learning_rate: 0.00002
+  epochs: 10
+  freeze_text_encoder: false     # true recommandé si dataset < quelques milliers de lignes
+  reg_loss_weight: 0.5
+  early_stopping_patience: 3

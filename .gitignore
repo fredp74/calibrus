@@ -1,0 +1,10 @@
+config.yaml
+data/*.pt
+data/*.csv
+!examples/sample_data.csv
+checkpoints/
+__pycache__/
+*.pyc
+.env
+venv/
+*.egg-info/
