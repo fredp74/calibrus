@@ -1,16 +1,16 @@
 # Calibrus
 
-Un modèle de décision "System One" open-source pour le trading algorithmique :
-route (long/short/hold), score continu et **confiance calibrée**, à partir de
-features de marché (OHLCV) et de texte optionnel (news, sentiment).
+An open-source "System One" decision model for algorithmic trading:
+route (long/short/hold), a continuous score, and **calibrated confidence**,
+built from market features (OHLCV) and optional text (news, sentiment).
 
-## Pourquoi
+## Why
 
-Un classifieur normal dit "long" avec 99% de confiance même quand il se trompe
-une fois sur deux. Calibrus calibre explicitement cette confiance (temperature
-scaling + mesure de l'ECE) pour que "90% de confiance" veuille vraiment dire
-"a raison 9 fois sur 10" — utile pour décider quand agir automatiquement et
-quand escalader vers une revue humaine.
+A standard classifier will say "long" with 99% confidence even when it's
+wrong half the time. Calibrus explicitly calibrates that confidence
+(temperature scaling + ECE measurement) so that "90% confidence" actually
+means "right 9 times out of 10" — useful for deciding when to act
+automatically and when to escalate to human review.
 
 ## Installation
 
@@ -21,50 +21,50 @@ python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Quickstart (avec les données d'exemple)
+## Quickstart (with sample data)
 
 ```bash
 cp config.yaml.example config.yaml
 bash scripts/quickstart.sh
 ```
 
-Ça construit le dataset, entraîne, calibre, et lance une inférence de test.
-Les données d'exemple (`examples/sample_data.csv`) sont minuscules — juste
-pour vérifier que le pipeline tourne. Remplace par tes propres données pour
-un vrai entraînement.
+This builds the dataset, trains, calibrates, and runs a test inference.
+The sample data (`examples/sample_data.csv`) is tiny — just enough to
+verify the pipeline runs end to end. Swap in your own data for real training.
 
-## Utiliser tes propres données
+## Using your own data
 
 ### Option 1 — CSV
-Colonnes requises : `timestamp, open, high, low, close, volume, text, label`
-(`text` peut être vide, `label` dans {short, hold, long}).
-Configure `data_source.type: csv` et le `path` dans `config.yaml`.
+Required columns: `timestamp, open, high, low, close, volume, text, label`
+(`text` can be empty, `label` is one of {short, hold, long}).
+Set `data_source.type: csv` and the `path` in `config.yaml`.
 
 ### Option 2 — MariaDB
 ```bash
 mysql -u root -p < scripts/setup_db.sql
-export CALIBRUS_DB_PASSWORD="ton_mot_de_passe"
+export CALIBRUS_DB_PASSWORD="your_password"
 ```
-Configure `data_source.type: mariadb` dans `config.yaml`.
+Set `data_source.type: mariadb` in `config.yaml`.
 
-**Sécurité** : ne mets jamais de mot de passe en clair dans `config.yaml` si tu
-comptes le committer — utilise toujours la variable d'environnement
-`CALIBRUS_DB_PASSWORD`.
+**Security**: never put a password in plain text in `config.yaml` if you
+plan to commit it — always use the `CALIBRUS_DB_PASSWORD` environment
+variable instead.
 
-### Indicateurs techniques automatiques
-Si tu n'as que de l'OHLCV brut, active `features.compute_ta.enabled: true` dans
-`config.yaml` — les indicateurs (`rsi`, `macd`, `bbands`, `ema`, `atr`, `obv`)
-sont calculés automatiquement. Si tu as déjà tes propres features, nomme-les
-`feat_*` dans tes données et désactive `compute_ta`.
+### Automatic technical indicators
+If you only have raw OHLCV, enable `features.compute_ta.enabled: true` in
+`config.yaml` — indicators (`rsi`, `macd`, `bbands`, `ema`, `atr`, `obv`)
+are computed automatically. If you already have your own features, name
 
-## Pipeline en détail
-calibrus.data.dataset -> construit le dataset (charge, calcule les features, split temporel)
-calibrus.train -> entraîne le modèle hybride (texte + numérique)
-calibrus.calibrate -> calibre la confiance (temperature scaling) + mesure l'ECE
-calibrus.infer -> sert des prédictions typées
+them `feat_*` in your data and disable `compute_ta`.
+
+## Pipeline overview
+calibrus.data.dataset -> builds the dataset (loads data, computes features, temporal split)
+calibrus.train -> trains the hybrid model (text + numeric)
+calibrus.calibrate -> calibrates confidence (temperature scaling) + measures ECE
+calibrus.infer -> serves typed predictions
 
 
-Chaque étape peut être lancée séparément :
+Each step can be run separately:
 ```bash
 python3 -m calibrus.data.dataset --config config.yaml --out data/dataset.pt
 python3 -m calibrus.train --config config.yaml --dataset data/dataset.pt --out checkpoints/calibrus_model.pt
@@ -72,7 +72,7 @@ python3 -m calibrus.calibrate --dataset data/dataset.pt --checkpoint checkpoints
 python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt --features '{"feat_rsi_14": 28.4}' --text "Fed signals rate cut"
 ```
 
-## Sortie
+## Output
 
 ```json
 {
@@ -83,21 +83,21 @@ python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt 
 }
 ```
 
-## Limites connues
+## Known limitations
 
-- Split temporel obligatoire (jamais de shuffle random) — mais ça ne protège
-  pas contre le look-ahead bias si tes features elles-mêmes utilisent des
-  données futures. Vérifie tes calculs de features.
-- Le split temporel signifie que **peu de données = pas de vrai test possible**.
-  Quelques centaines de lignes ne suffisent pas pour une évaluation fiable.
-- La calibration (temperature scaling) est apprise sur le split de validation ;
-  si ce split est petit, la température apprise sera bruitée. Vérifie
-  `ece_before`/`ece_after` loggés par `calibrate.py` avant de faire confiance
-  au modèle.
-- Ceci n'est pas un conseil financier ni un système de trading prêt à l'emploi
-  — c'est un pipeline de recherche à valider rigoureusement (backtest complet,
-  coûts de transaction, slippage) avant tout usage réel.
+- Temporal split is mandatory (never random shuffle) — but this doesn't
+  protect against look-ahead bias if your own feature calculations use
+  future data. Double-check your feature engineering.
+- The temporal split means **little data = no real test possible**.
+  A few hundred rows isn't enough for a reliable evaluation.
+- Calibration (temperature scaling) is learned on the validation split;
+  if that split is small, the learned temperature will be noisy. Check the
+  `ece_before`/`ece_after` values logged by `calibrate.py` before trusting
+  the model.
+- This is not financial advice or a ready-to-use trading system — it's a
+  research pipeline that needs rigorous validation (full backtesting,
+  transaction costs, slippage) before any real-world use.
 
 ## License
 
-MIT — voir LICENSE.
+MIT — see LICENSE.
