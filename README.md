@@ -4,7 +4,7 @@ An open-source "System One" decision model for algorithmic trading:
 route (long/short/hold), a continuous score, and **calibrated confidence**,
 built from market features (OHLCV) and optional text (news, sentiment).
 
-*A research project by [AlgoTradingResearch](https://algotradingresearch.com).*
+*A research project by [Algotradingresearch](https://algotradingresearch.com).*
 
 ## Why
 
