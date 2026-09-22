@@ -1,13 +1,13 @@
 """
-calibrus/calibrate.py — Calibration post-hoc du modèle via temperature scaling.
+calibrus/calibrate.py — Post-hoc calibration of the model via temperature scaling.
 
-Principe: après entraînement, le modèle est souvent sur- ou sous-confiant.
-On apprend un seul scalaire T (température) sur le split de VALIDATION qui,
-appliqué aux logits avant softmax (logits / T), minimise le NLL — sans
-toucher aux poids du modèle ni à son accuracy.
+Principle: after training, the model is often over- or under-confident.
+We learn a single scalar T (temperature) on the VALIDATION split which,
+applied to the logits before softmax (logits / T), minimizes the NLL — without
+touching the model's weights or its accuracy.
 
-On mesure l'ECE (Expected Calibration Error) avant/après pour vérifier
-que la calibration a réellement amélioré les choses.
+We measure the ECE (Expected Calibration Error) before/after to verify
+that calibration actually improved things.
 
 Usage:
     python3 -m calibrus.calibrate --dataset data/dataset.pt \
@@ -26,7 +26,7 @@ from calibrus.train import SplitDataset
 
 @torch.no_grad()
 def collect_logits_labels(model, loader, device):
-    """Fait un forward pass complet sur un split et récupère tous les logits + labels."""
+    """Runs a full forward pass over a split and collects all logits + labels."""
     model.eval()
     all_logits, all_labels = [], []
 
@@ -46,8 +46,8 @@ def collect_logits_labels(model, loader, device):
 def expected_calibration_error(probs: torch.Tensor, labels: torch.Tensor,
                                 n_bins: int = 15) -> float:
     """
-    ECE: moyenne pondérée, sur des bins de confiance, de |accuracy - confiance moyenne|.
-    Plus c'est proche de 0, plus le modèle est bien calibré.
+    ECE: weighted average, over confidence bins, of |accuracy - average confidence|.
+    The closer to 0, the better calibrated the model is.
     """
     confidences, predictions = probs.max(dim=-1)
     accuracies = predictions.eq(labels)
@@ -71,7 +71,7 @@ def expected_calibration_error(probs: torch.Tensor, labels: torch.Tensor,
 def fit_temperature(logits: torch.Tensor, labels: torch.Tensor,
                      max_iter: int = 50, lr: float = 0.01) -> float:
     """
-    Apprend le scalaire T par LBFGS en minimisant le NLL sur (logits/T, labels).
+    Learns the scalar T via LBFGS by minimizing the NLL on (logits/T, labels).
     """
     temperature = nn.Parameter(torch.ones(1) * 1.5)
     optimizer = torch.optim.LBFGS([temperature], lr=lr, max_iter=max_iter)
@@ -108,31 +108,31 @@ def main():
     val_ds = SplitDataset(data["splits"]["val"])
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False)
 
-    print("[calibrate] collecte des logits sur le split de validation...")
+    print("[calibrate] collecting logits on the validation split...")
     logits, labels = collect_logits_labels(model, val_loader, device)
 
     probs_before = torch.softmax(logits, dim=-1)
     ece_before = expected_calibration_error(probs_before, labels)
-    print(f"[calibrate] ECE avant calibration: {ece_before:.4f}")
+    print(f"[calibrate] ECE before calibration: {ece_before:.4f}")
 
-    print("[calibrate] fit de la température...")
+    print("[calibrate] fitting temperature...")
     temperature = fit_temperature(logits, labels)
-    print(f"[calibrate] température apprise: T={temperature:.4f}")
+    print(f"[calibrate] learned temperature: T={temperature:.4f}")
 
     probs_after = torch.softmax(logits / temperature, dim=-1)
     ece_after = expected_calibration_error(probs_after, labels)
-    print(f"[calibrate] ECE après calibration: {ece_after:.4f}")
+    print(f"[calibrate] ECE after calibration: {ece_after:.4f}")
 
     if ece_after >= ece_before:
-        print("[calibrate] ATTENTION: la calibration n'a pas réduit l'ECE. "
-              "Vérifie la taille du split de validation (trop petit = bruit) "
-              "ou le comportement du modèle avant de déployer en confiance.")
+        print("[calibrate] WARNING: calibration did not reduce the ECE. "
+              "Check the size of the validation split (too small = noisy) "
+              "or the model's behavior before deploying with confidence.")
 
     ckpt["temperature"] = temperature
     ckpt["ece_before"] = ece_before
     ckpt["ece_after"] = ece_after
     torch.save(ckpt, args.out)
-    print(f"[calibrate] checkpoint calibré sauvegardé -> {args.out}")
+    print(f"[calibrate] calibrated checkpoint saved -> {args.out}")
 
 
 if __name__ == "__main__":
