@@ -1,9 +1,9 @@
 """
-calibrus/model.py — Modèle hybride Calibrus: encoder texte (DistilBERT) + encoder
-numérique (MLP) fusionnés, tête classification (3 classes) + tête régression (score).
+calibrus/model.py — Calibrus hybrid model: text encoder (DistilBERT) + numeric
+encoder (MLP) fused together, classification head (3 classes) + regression head (score).
 
-Sortie brute (avant calibration): logits classe + score continu.
-La calibration (température) est appliquée séparément à l'inférence (voir calibrate.py).
+Raw output (before calibration): class logits + continuous score.
+Calibration (temperature) is applied separately at inference time (see calibrate.py).
 """
 
 import torch
@@ -14,7 +14,7 @@ NUM_CLASSES = 3  # short=0, hold=1, long=2
 
 
 class NumericEncoder(nn.Module):
-    """MLP simple pour encoder les features numériques (feat_*) en un vecteur dense."""
+    """Simple MLP to encode numeric features (feat_*) into a dense vector."""
 
     def __init__(self, n_features: int, hidden_dim: int = 128, out_dim: int = 64,
                  dropout: float = 0.1):
@@ -33,8 +33,8 @@ class NumericEncoder(nn.Module):
 
 class CalibrusModel(nn.Module):
     """
-    Modèle hybride: texte (DistilBERT gelé ou fine-tuné) + numérique (MLP) -> fusion
-    -> tête classification (route) + tête régression (score continu).
+    Hybrid model: text (frozen or fine-tuned DistilBERT) + numeric (MLP) -> fusion
+    -> classification head (route) + regression head (continuous score).
     """
 
     def __init__(self, n_features: int, text_model_name: str = "distilbert-base-uncased",
@@ -64,7 +64,7 @@ class CalibrusModel(nn.Module):
         self.classification_head = nn.Linear(fusion_hidden_dim, NUM_CLASSES)
         self.regression_head = nn.Sequential(
             nn.Linear(fusion_hidden_dim, 1),
-            nn.Tanh(),  # score borné [-1, 1]
+            nn.Tanh(),  # score bounded to [-1, 1]
         )
 
     def encode_text(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
@@ -84,7 +84,7 @@ class CalibrusModel(nn.Module):
 
     @classmethod
     def from_dataset_meta(cls, meta: dict, **kwargs) -> "CalibrusModel":
-        """Construit le modèle directement depuis les métadonnées sauvegardées par dataset.py."""
+        """Builds the model directly from the metadata saved by dataset.py."""
         n_features = len(meta["feat_cols"])
         text_model_name = meta.get("text_model", "distilbert-base-uncased")
         return cls(n_features=n_features, text_model_name=text_model_name, **kwargs)
