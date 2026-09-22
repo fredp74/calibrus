@@ -10,7 +10,7 @@ A standard classifier will say "long" with 99% confidence even when it's
 wrong half the time. Calibrus explicitly calibrates that confidence
 (Temperature Scaling + Expected Calibration Error (ECE) measurement) so that "90% confidence" actually
 means "right 9 times out of 10" — useful for deciding when to act
-automatically and when to escalate to human review.
+automatically and/or when to escalate to human review.
 
 ## Installation
 
