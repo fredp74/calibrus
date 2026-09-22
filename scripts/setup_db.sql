@@ -1,4 +1,4 @@
--- Calibrus — schéma MariaDB optionnel pour les users voulant une table dédiée.
+-- Calibrus — optional MariaDB schema for users who want a dedicated table.
 -- Usage: mysql -u root -p trading < scripts/setup_db.sql
 
 CREATE DATABASE IF NOT EXISTS trading
@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS signals (
     INDEX idx_timestamp (timestamp)
 ) ENGINE=InnoDB;
 
--- Utilisateur applicatif dédié (recommandé plutôt que d'utiliser root)
--- Remplace 'CHANGE_ME' par un mot de passe fort, puis exporte-le en variable
--- d'environnement CALIBRUS_DB_PASSWORD plutôt que de le mettre dans config.yaml.
+-- Dedicated application user (recommended instead of using root)
+-- Replace 'CHANGE_ME' with a strong password, then export it as the
+-- CALIBRUS_DB_PASSWORD environment variable rather than putting it in config.yaml.
 CREATE USER IF NOT EXISTS 'calibrus_user'@'localhost' IDENTIFIED BY 'CHANGE_ME';
 GRANT SELECT, INSERT ON trading.signals TO 'calibrus_user'@'localhost';
 FLUSH PRIVILEGES;
