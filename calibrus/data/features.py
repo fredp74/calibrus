@@ -1,6 +1,6 @@
 """
-calibrus/data/features.py — Calcul automatique de features techniques depuis OHLCV
-brut, ou passthrough si l'utilisateur fournit déjà des colonnes feat_*.
+calibrus/data/features.py — Automatic computation of technical features from raw
+OHLCV, or passthrough if the user already provides feat_* columns.
 """
 
 import pandas as pd
@@ -24,28 +24,28 @@ def has_existing_features(df: pd.DataFrame) -> bool:
 
 def compute_indicators(df: pd.DataFrame, indicators: list) -> pd.DataFrame:
     """
-    Calcule les indicateurs demandés depuis OHLCV et les ajoute comme colonnes feat_*.
-    Nécessite: pip install pandas-ta
+    Computes the requested indicators from OHLCV and adds them as feat_* columns.
+    Requires: pip install pandas-ta
     """
     try:
         import pandas_ta as ta
     except ImportError:
         raise FeatureError(
-            "Le package 'pandas-ta' est requis pour le calcul auto d'indicateurs. "
-            "Installe avec: pip install pandas-ta"
+            "The 'pandas-ta' package is required for automatic indicator computation. "
+            "Install with: pip install pandas-ta"
         )
 
     if not has_ohlcv(df):
         missing = [c for c in OHLCV_COLS if c not in df.columns]
         raise FeatureError(
-            f"Colonnes OHLCV manquantes pour calculer les indicateurs: {missing}. "
-            f"Colonnes disponibles: {list(df.columns)}"
+            f"Missing OHLCV columns needed to compute indicators: {missing}. "
+            f"Available columns: {list(df.columns)}"
         )
 
     unknown = set(indicators) - SUPPORTED_INDICATORS
     if unknown:
         raise FeatureError(
-            f"Indicateurs inconnus: {unknown}. Supportés: {sorted(SUPPORTED_INDICATORS)}"
+            f"Unknown indicators: {unknown}. Supported: {sorted(SUPPORTED_INDICATORS)}"
         )
 
     df = df.copy()
@@ -86,18 +86,18 @@ def compute_indicators(df: pd.DataFrame, indicators: list) -> pd.DataFrame:
     df = df.dropna(subset=added_cols).reset_index(drop=True)
     n_dropped = n_before - len(df)
     if n_dropped > 0:
-        print(f"[features] {n_dropped} lignes supprimées (NaN de warm-up des indicateurs)")
+        print(f"[features] {n_dropped} rows dropped (NaN from indicator warm-up)")
 
-    print(f"[features] Indicateurs calculés: {added_cols}")
+    print(f"[features] Computed indicators: {added_cols}")
     return df
 
 
 def prepare_features(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     """
-    Point d'entrée unique. Logique de décision:
-    1. Si compute_ta activé dans la config -> calcule depuis OHLCV (erreur si OHLCV absent)
-    2. Sinon, si des feat_* existent déjà -> passthrough
-    3. Sinon -> erreur explicite (rien à faire tourner)
+    Single entry point. Decision logic:
+    1. If compute_ta is enabled in the config -> compute from OHLCV (error if OHLCV is missing)
+    2. Otherwise, if feat_* columns already exist -> passthrough
+    3. Otherwise -> explicit error (nothing to run)
     """
     ta_cfg = cfg.get("features", {}).get("compute_ta", {})
     compute_enabled = ta_cfg.get("enabled", False)
@@ -105,15 +105,15 @@ def prepare_features(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     if compute_enabled:
         indicators = ta_cfg.get("indicators", [])
         if not indicators:
-            raise FeatureError("compute_ta.enabled=true mais aucune liste 'indicators' fournie.")
+            raise FeatureError("compute_ta.enabled=true but no 'indicators' list was provided.")
         df = compute_indicators(df, indicators)
 
     if not has_existing_features(df):
         raise FeatureError(
-            "Aucune colonne feat_* trouvée après traitement. "
-            "Active 'compute_ta' dans config.yaml ou fournis des colonnes feat_* toi-même."
+            "No feat_* column found after processing. "
+            "Enable 'compute_ta' in config.yaml or provide feat_* columns yourself."
         )
 
     feat_cols = [c for c in df.columns if c.startswith("feat_")]
-    print(f"[features] {len(feat_cols)} features prêtes: {feat_cols}")
+    print(f"[features] {len(feat_cols)} features ready: {feat_cols}")
     return df
