@@ -1,13 +1,13 @@
 """
-calibrus/infer.py — Point d'entrée "Calibrus-style": prend un état (features num +
-texte), retourne une décision typée avec score et confiance calibrée.
+calibrus/infer.py — "Calibrus-style" entry point: takes a state (numeric features +
+text), returns a typed decision with score and calibrated confidence.
 
-Usage CLI (test rapide):
+CLI usage (quick test):
     python3 -m calibrus.infer --checkpoint checkpoints/calibrus_model_calibrated.pt \
         --features '{"feat_rsi_14": 28.4, "feat_macd": 0.12}' \
         --text "Fed signals rate cut, market rallies"
 
-Usage programmatique:
+Programmatic usage:
     from calibrus.infer import CalibrusPredictor
     predictor = CalibrusPredictor("checkpoints/calibrus_model_calibrated.pt")
     result = predictor.predict(features={...}, text="...")
@@ -29,7 +29,7 @@ class InferenceError(Exception):
 
 
 class CalibrusPredictor:
-    """Charge un checkpoint calibré une seule fois, puis sert des prédictions rapides."""
+    """Loads a calibrated checkpoint once, then serves fast predictions."""
 
     def __init__(self, checkpoint_path: str, device: str = None):
         self.device = torch.device(
@@ -44,8 +44,8 @@ class CalibrusPredictor:
         self.temperature = ckpt.get("temperature", 1.0)
 
         if "temperature" not in ckpt:
-            print("[infer] ATTENTION: pas de température trouvée dans le checkpoint — "
-                  "modèle non calibré (as-tu lancé calibrate.py ?). T=1.0 utilisé par défaut.")
+            print("[infer] WARNING: no temperature found in the checkpoint — "
+                  "uncalibrated model (did you run calibrate.py?). Defaulting to T=1.0.")
 
         self.tokenizer = AutoTokenizer.from_pretrained(ckpt["text_model"])
         self.model = CalibrusModel.from_dataset_meta({
@@ -54,14 +54,14 @@ class CalibrusPredictor:
         self.model.load_state_dict(ckpt["model_state_dict"])
         self.model.eval()
 
-        print(f"[infer] modèle chargé ({checkpoint_path}), T={self.temperature:.4f}, "
+        print(f"[infer] model loaded ({checkpoint_path}), T={self.temperature:.4f}, "
               f"device={self.device}")
 
     def _build_numeric_tensor(self, features: dict) -> torch.Tensor:
         missing = [c for c in self.feat_cols if c not in features]
         if missing:
             raise InferenceError(
-                f"Features manquantes: {missing}. Attendu: {self.feat_cols}"
+                f"Missing features: {missing}. Expected: {self.feat_cols}"
             )
         raw = [features[c] for c in self.feat_cols]
         mean = [self.norm_mean[c] for c in self.feat_cols]
@@ -100,21 +100,21 @@ class CalibrusPredictor:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", required=True)
-    ap.add_argument("--features", required=True, help='JSON string des features, ex: {"feat_rsi_14": 28.4}')
-    ap.add_argument("--text", default="", help="Texte optionnel (news/contexte)")
+    ap.add_argument("--features", required=True, help='JSON string of features, e.g.: {"feat_rsi_14": 28.4}')
+    ap.add_argument("--text", default="", help="Optional text (news/context)")
     args = ap.parse_args()
 
     try:
         features = json.loads(args.features)
     except json.JSONDecodeError as e:
-        raise SystemExit(f"[ERREUR] --features doit être un JSON valide: {e}")
+        raise SystemExit(f"[ERROR] --features must be valid JSON: {e}")
 
     predictor = CalibrusPredictor(args.checkpoint)
 
     try:
         result = predictor.predict(features=features, text=args.text)
     except InferenceError as e:
-        raise SystemExit(f"[ERREUR] {e}")
+        raise SystemExit(f"[ERROR] {e}")
 
     print(json.dumps(result, indent=2))
 
