@@ -1,8 +1,8 @@
 """
-calibrus/data/dataset.py — Pipeline complet: charge (loaders) -> features -> split
-temporel -> tenseurs prêts pour l'entraînement. Point d'entrée: build_dataset(cfg).
+calibrus/data/dataset.py — Full pipeline: load (loaders) -> features -> temporal
+split -> tensors ready for training. Entry point: build_dataset(cfg).
 
-Usage direct:
+Direct usage:
     python3 -m calibrus.data.dataset --config config.yaml --out data/dataset.pt
 """
 
@@ -26,17 +26,17 @@ class DatasetBuildError(Exception):
 def validate_labels(df: pd.DataFrame) -> pd.DataFrame:
     if "label" not in df.columns:
         raise DatasetBuildError(
-            "Colonne 'label' manquante. Chaque ligne doit avoir un label dans "
+            "Missing 'label' column. Each row must have a label in "
             f"{list(LABELS.keys())}."
         )
     df = df.copy()
     df["label"] = df["label"].astype(str).str.lower().str.strip()
     if df["label"].isna().any():
-        raise DatasetBuildError("Labels manquants détectés — nettoie tes données avant.")
+        raise DatasetBuildError("Missing labels detected — clean your data first.")
     bad = set(df["label"].unique()) - set(LABELS.keys())
     if bad:
         raise DatasetBuildError(
-            f"Labels inconnus: {bad}. Attendu: {list(LABELS.keys())}"
+            f"Unknown labels: {bad}. Expected: {list(LABELS.keys())}"
         )
     return df
 
@@ -55,9 +55,9 @@ def temporal_split(df: pd.DataFrame, train_frac: float, val_frac: float):
     val_end = int(n * (train_frac + val_frac))
     if train_end == 0 or val_end == train_end or val_end == n:
         raise DatasetBuildError(
-            f"Dataset trop petit ({n} lignes) pour un split "
-            f"train={train_frac}/val={val_frac}/test={1-train_frac-val_frac}. "
-            "Ajoute plus de données ou ajuste les fractions dans config.yaml."
+            f"Dataset too small ({n} rows) for a "
+            f"train={train_frac}/val={val_frac}/test={1-train_frac-val_frac} split. "
+            "Add more data or adjust the fractions in config.yaml."
         )
     return (
         df.iloc[:train_end].reset_index(drop=True),
@@ -100,7 +100,7 @@ def build_dataset(cfg: dict) -> dict:
     val_frac = split_cfg.get("val_frac", 0.15)
 
     train_df, val_df, test_df = temporal_split(df, train_frac, val_frac)
-    print(f"[dataset] split temporel -> train={len(train_df)} val={len(val_df)} test={len(test_df)}")
+    print(f"[dataset] temporal split -> train={len(train_df)} val={len(val_df)} test={len(test_df)}")
 
     mean, std = compute_norm_stats(train_df, feat_cols)
 
@@ -135,11 +135,11 @@ def main():
     try:
         dataset = build_dataset(cfg)
     except (DataLoadError, FeatureError, DatasetBuildError) as e:
-        print(f"[ERREUR] {e}")
+        print(f"[ERROR] {e}")
         raise SystemExit(1)
 
     torch.save(dataset, args.out)
-    print(f"[dataset] sauvegardé -> {args.out}")
+    print(f"[dataset] saved -> {args.out}")
 
 
 if __name__ == "__main__":
