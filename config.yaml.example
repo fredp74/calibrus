@@ -1,6 +1,6 @@
-# Calibrus — configuration exemple
-# Copie ce fichier en config.yaml et adapte-le. NE COMMIT JAMAIS config.yaml
-# s'il contient des identifiants en clair — utilise CALIBRUS_DB_PASSWORD à la place.
+# Calibrus — example configuration
+# Copy this file to config.yaml and adapt it. NEVER COMMIT config.yaml
+# if it contains plaintext credentials — use CALIBRUS_DB_PASSWORD instead.
 
 data_source:
   type: csv                      # csv | parquet | mariadb
@@ -17,8 +17,8 @@ data_source:
     database: "trading"
     table: "signals"
     user: "calibrus_user"
-    password: ""                 # laisse vide, utilise CALIBRUS_DB_PASSWORD en variable d'env
-    query: null                  # optionnel: requête SQL custom au lieu de SELECT * FROM table
+    password: ""                 # leave empty, use CALIBRUS_DB_PASSWORD as an env variable
+    query: null                  # optional: custom SQL query instead of SELECT * FROM table
 
 features:
   compute_ta:
@@ -29,12 +29,12 @@ features:
 
 split:
   train_frac: 0.7
-  val_frac: 0.15                 # le reste (0.15 ici) va au test
+  val_frac: 0.15                 # the remainder (0.15 here) goes to test
 
 train:
   batch_size: 16
   learning_rate: 0.00002
   epochs: 10
-  freeze_text_encoder: false     # true recommandé si dataset < quelques milliers de lignes
+  freeze_text_encoder: false     # true recommended if dataset < a few thousand rows
   reg_loss_weight: 0.5
   early_stopping_patience: 3
