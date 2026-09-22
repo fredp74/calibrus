@@ -1,6 +1,7 @@
 """
-calibrus/train.py — Entraînement multi-tâches (classification route + régression
-score) du CalibrusModel, avec split temporel déjà fait en amont (dataset.py).
+calibrus/train.py — Multi-task training (route classification + score
+regression) of the CalibrusModel, with the temporal split already done upstream
+(dataset.py).
 
 Usage:
     python3 -m calibrus.train --config config.yaml --dataset data/dataset.pt \
@@ -17,7 +18,7 @@ from calibrus.model import CalibrusModel
 
 
 class SplitDataset(Dataset):
-    """Wrap un split (dict de tenseurs) en Dataset PyTorch standard."""
+    """Wraps a split (dict of tensors) into a standard PyTorch Dataset."""
 
     def __init__(self, split: dict):
         self.x_num = split["x_num"]
@@ -39,10 +40,10 @@ class SplitDataset(Dataset):
 
 def pseudo_target_score(y: torch.Tensor) -> torch.Tensor:
     """
-    Cible de régression dérivée du label de classe, en l'absence de score continu
-    fourni par l'utilisateur: short=-1, hold=0, long=+1.
-    TODO: si tu as un vrai score continu (ex: rendement futur normalisé) dans tes
-    données, remplace cette fonction pour utiliser cette colonne à la place.
+    Regression target derived from the class label, in the absence of a
+    continuous score provided by the user: short=-1, hold=0, long=+1.
+    TODO: if you have a real continuous score (e.g. normalized future return)
+    in your data, replace this function to use that column instead.
     """
     mapping = torch.tensor([-1.0, 0.0, 1.0])
     return mapping[y]
@@ -162,14 +163,14 @@ def main():
                 "val_loss": best_val_loss,
                 "epoch": epoch,
             }, args.out)
-            print(f"  -> nouveau meilleur modèle sauvegardé ({args.out})")
+            print(f"  -> new best model saved ({args.out})")
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
-                print(f"[train] early stopping (pas d'amélioration depuis {patience} epochs)")
+                print(f"[train] early stopping (no improvement for {patience} epochs)")
                 break
 
-    print(f"[train] terminé. meilleur val_loss={best_val_loss:.4f} -> {args.out}")
+    print(f"[train] done. best val_loss={best_val_loss:.4f} -> {args.out}")
 
 
 if __name__ == "__main__":
